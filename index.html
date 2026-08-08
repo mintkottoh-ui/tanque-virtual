@@ -140,13 +140,13 @@
           </label>
 
           <label class="field">
-            <span>Litros abastecidos</span>
-            <input type="number" id="fuelLiters" inputmode="decimal" min="0" step="0.01" placeholder="Ex: 30" required />
+            <span>Preço por litro (R$)</span>
+            <input type="number" id="fuelPrice" inputmode="decimal" min="0" step="0.01" required />
           </label>
 
           <label class="field">
-            <span>Preço por litro (R$)</span>
-            <input type="number" id="fuelPrice" inputmode="decimal" min="0" step="0.01" required />
+            <span>Quanto você abasteceu (R$)</span>
+            <input type="number" id="fuelValue" inputmode="decimal" min="0" step="0.01" placeholder="Ex: 150" required />
           </label>
 
           <label class="field">
@@ -155,7 +155,7 @@
           </label>
 
           <div class="preview" id="fuelPreview">
-            <div class="preview-row"><span>Total pago</span><strong id="prevTotal">R$ 0,00</strong></div>
+            <div class="preview-row"><span>Litros calculados</span><strong id="prevLiters">0 L</strong></div>
             <div class="preview-row"><span>Tanque após abastecer</span><strong id="prevTankFuel">—</strong></div>
           </div>
 

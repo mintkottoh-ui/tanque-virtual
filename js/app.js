@@ -223,7 +223,7 @@ document.getElementById("formTrajeto").addEventListener("submit", (e) => {
 --------------------------------------------------------- */
 
 const fuelTypeEl = document.getElementById("fuelType");
-const fuelLitersEl = document.getElementById("fuelLiters");
+const fuelValueEl = document.getElementById("fuelValue");
 const fuelPriceEl = document.getElementById("fuelPrice");
 const fuelDateEl = document.getElementById("fuelDate");
 const mixWarningEl = document.getElementById("mixWarning");
@@ -233,10 +233,10 @@ function fillDefaultPrice() {
 }
 
 function computeFuelPreview() {
-  const liters = parseFloat(fuelLitersEl.value) || 0;
   const price = parseFloat(fuelPriceEl.value) || 0;
-  const total = liters * price;
-  document.getElementById("prevTotal").textContent = fmtMoney(total);
+  const value = parseFloat(fuelValueEl.value) || 0;
+  const liters = price > 0 ? value / price : 0;
+  document.getElementById("prevLiters").textContent = `${fmtNum(liters, 2)} L`;
 
   const tankAfter = Math.min(state.config.capacityL, state.tank.currentL + liters);
   document.getElementById("prevTankFuel").textContent = `${fmtNum(tankAfter, 1)} L (${Math.round((tankAfter / state.config.capacityL) * 100)}%)`;
@@ -245,19 +245,28 @@ function computeFuelPreview() {
 }
 
 fuelTypeEl.addEventListener("change", () => { fillDefaultPrice(); computeFuelPreview(); });
-[fuelLitersEl, fuelPriceEl].forEach(el => el.addEventListener("input", computeFuelPreview));
+[fuelValueEl, fuelPriceEl].forEach(el => el.addEventListener("input", computeFuelPreview));
 
 document.getElementById("formAbastecer").addEventListener("submit", (e) => {
   e.preventDefault();
   const fuel = fuelTypeEl.value;
-  const liters = parseFloat(fuelLitersEl.value);
   const price = parseFloat(fuelPriceEl.value);
-  if (!liters || liters <= 0 || !price || price < 0) return;
+  const value = parseFloat(fuelValueEl.value);
+  if (!price || price <= 0 || !value || value <= 0) return;
 
   const capacity = state.config.capacityL;
   const before = state.tank.currentL;
-  const after = Math.min(capacity, before + liters);
-  const overflow = before + liters - capacity;
+  let liters = value / price;
+  let after = before + liters;
+  let cappedValue = 0;
+
+  if (after > capacity) {
+    liters = capacity - before;
+    cappedValue = value - liters * price;
+    after = capacity;
+  }
+
+  const total = liters * price;
 
   state.tank.currentL = after;
   state.tank.currentFuel = fuel;
@@ -270,13 +279,13 @@ document.getElementById("formAbastecer").addEventListener("submit", (e) => {
     fuel,
     liters,
     pricePerL: price,
-    total: liters * price
+    total
   });
   saveState();
 
-  toast(overflow > 0
-    ? `Abastecido! Tanque cheio (${fmtNum(overflow, 1)} L excederiam a capacidade)`
-    : `Abastecido: +${fmtNum(liters, 1)} L de ${FUEL_LABELS[fuel]}`);
+  toast(cappedValue > 0
+    ? `Tanque ficou cheio antes de usar tudo (sobrou ${fmtMoney(cappedValue)})`
+    : `Abastecido: +${fmtNum(liters, 2)} L de ${FUEL_LABELS[fuel]} (${fmtMoney(total)})`);
 
   e.target.reset();
   fuelDateEl.value = todayISODate();
