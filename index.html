@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Tanque Virtual</title>
+<meta name="description" content="Tanque de combustível virtual pessoal: consumo, autonomia e histórico." />
+<meta name="theme-color" content="#0d141c" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Tanque" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">⛽</span>
+      <span class="brand-name">Tanque Virtual</span>
+    </div>
+    <div class="fuel-badge" id="fuelBadge">—</div>
+  </header>
+
+  <main class="views">
+
+    <!-- PAINEL -->
+    <section class="view active" id="view-painel" data-view="painel">
+
+      <div class="card gauge-card">
+        <div class="gauge-top">
+          <div>
+            <div class="gauge-liters"><span id="tankLiters">0</span><span class="unit">L</span></div>
+            <div class="gauge-sub">de <span id="tankCapacity">0</span> L</div>
+          </div>
+          <div class="gauge-percent" id="tankPercent">0%</div>
+        </div>
+
+        <div class="tank-bar-wrap">
+          <div class="tank-bar-track">
+            <div class="tank-bar-fill" id="tankBarFill"></div>
+            <div class="tank-bar-ticks">
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="tank-bar-labels">
+            <span>E</span><span>1/4</span><span>1/2</span><span>3/4</span><span>F</span>
+          </div>
+        </div>
+
+        <div class="gauge-footer">
+          <div class="stat">
+            <div class="stat-label">Autonomia estimada</div>
+            <div class="stat-value" id="autonomyKm">0 km</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Combustível atual</div>
+            <div class="stat-value" id="currentFuelLabel">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="lowFuelWarning" hidden>
+        <p class="warning">⚠️ Nível baixo. Considere abastecer em breve.</p>
+      </div>
+
+      <div class="quick-actions">
+        <button class="btn btn-primary" data-goto="trajeto">🛣️ Registrar trajeto</button>
+        <button class="btn btn-accent" data-goto="abastecer">⛽ Abastecer</button>
+      </div>
+
+      <div class="card today-summary">
+        <div class="card-title">Hoje</div>
+        <div class="mini-stats">
+          <div><span id="todayKm">0</span> km rodados</div>
+          <div><span id="todayLiters">0</span> L consumidos</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TRAJETO -->
+    <section class="view" id="view-trajeto" data-view="trajeto">
+      <div class="card">
+        <div class="card-title">Registrar trajeto</div>
+        <p class="hint">Informe a distância e o tempo gasto. O app considera o trânsito: quanto menor a velocidade média, maior o consumo estimado.</p>
+
+        <form id="formTrajeto">
+          <label class="field">
+            <span>Distância percorrida (km)</span>
+            <input type="number" id="tripKm" inputmode="decimal" min="0" step="0.1" placeholder="Ex: 12.5" required />
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Tempo — horas</span>
+              <input type="number" id="tripHours" inputmode="numeric" min="0" step="1" placeholder="0" />
+            </label>
+            <label class="field">
+              <span>Tempo — minutos</span>
+              <input type="number" id="tripMinutes" inputmode="numeric" min="0" max="59" step="1" placeholder="0" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Data</span>
+            <input type="date" id="tripDate" required />
+          </label>
+
+          <div class="preview" id="tripPreview" hidden>
+            <div class="preview-row"><span>Velocidade média</span><strong id="prevSpeed">—</strong></div>
+            <div class="preview-row"><span>Condição estimada</span><strong id="prevCondition">—</strong></div>
+            <div class="preview-row"><span>Consumo estimado</span><strong id="prevConsumption">—</strong></div>
+            <div class="preview-row"><span>Tanque após o trajeto</span><strong id="prevTankAfter">—</strong></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Salvar trajeto</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ABASTECER -->
+    <section class="view" id="view-abastecer" data-view="abastecer">
+      <div class="card">
+        <div class="card-title">Abastecer</div>
+
+        <form id="formAbastecer">
+          <label class="field">
+            <span>Combustível</span>
+            <select id="fuelType">
+              <option value="gasolina">Gasolina</option>
+              <option value="etanol">Etanol</option>
+              <option value="diesel">Diesel</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Litros abastecidos</span>
+            <input type="number" id="fuelLiters" inputmode="decimal" min="0" step="0.01" placeholder="Ex: 30" required />
+          </label>
+
+          <label class="field">
+            <span>Preço por litro (R$)</span>
+            <input type="number" id="fuelPrice" inputmode="decimal" min="0" step="0.01" required />
+          </label>
+
+          <label class="field">
+            <span>Data</span>
+            <input type="date" id="fuelDate" required />
+          </label>
+
+          <div class="preview" id="fuelPreview">
+            <div class="preview-row"><span>Total pago</span><strong id="prevTotal">R$ 0,00</strong></div>
+            <div class="preview-row"><span>Tanque após abastecer</span><strong id="prevTankFuel">—</strong></div>
+          </div>
+
+          <p class="hint" id="mixWarning" hidden>⚠️ Você está abastecendo com um combustível diferente do atual no tanque. O app vai considerar o tanque como 100% do novo combustível a partir de agora (sem simular mistura).</p>
+
+          <button type="submit" class="btn btn-accent btn-block">Confirmar abastecimento</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- HISTORICO -->
+    <section class="view" id="view-historico" data-view="historico">
+      <div class="card">
+        <div class="card-title">Histórico</div>
+
+        <div class="segmented" id="historyPeriodSwitch">
+          <button class="seg-btn active" data-period="dia">Dia</button>
+          <button class="seg-btn" data-period="semana">Semana</button>
+          <button class="seg-btn" data-period="mes">Mês</button>
+        </div>
+
+        <div id="historyList" class="history-list"></div>
+        <p class="hint" id="historyEmpty" hidden>Nenhum registro ainda.</p>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="view" id="view-config" data-view="config">
+      <div class="card">
+        <div class="card-title">Veículo e consumo</div>
+
+        <label class="field">
+          <span>Capacidade do tanque (L)</span>
+          <input type="number" id="cfgCapacity" min="1" step="0.1" />
+        </label>
+
+        <label class="field">
+          <span>Consumo na gasolina (km/L)</span>
+          <input type="number" id="cfgKmLGasolina" min="0" step="0.1" />
+        </label>
+
+        <label class="field">
+          <span>Fator etanol (equivalência)</span>
+          <input type="number" id="cfgEthanolFactor" min="0.1" max="1" step="0.01" />
+        </label>
+        <p class="hint">O consumo em etanol é calculado como gasolina × fator (padrão 0,70, já que o etanol rende cerca de 30% menos). Ajuste conforme sua experiência real.</p>
+
+        <div class="preview">
+          <div class="preview-row"><span>Consumo etanol calculado</span><strong id="calcEthanolKmL">—</strong></div>
+        </div>
+
+        <label class="field">
+          <span>Consumo no diesel (km/L)</span>
+          <input type="number" id="cfgKmLDiesel" min="0" step="0.1" />
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Preços dos combustíveis</div>
+        <label class="field">
+          <span>Gasolina (R$/L)</span>
+          <input type="number" id="cfgPrecoGasolina" min="0" step="0.01" />
+        </label>
+        <label class="field">
+          <span>Etanol (R$/L)</span>
+          <input type="number" id="cfgPrecoEtanol" min="0" step="0.01" />
+        </label>
+        <label class="field">
+          <span>Diesel (R$/L)</span>
+          <input type="number" id="cfgPrecoDiesel" min="0" step="0.01" />
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tanque atual</div>
+        <label class="field">
+          <span>Combustível no tanque agora</span>
+          <select id="cfgCurrentFuel">
+            <option value="gasolina">Gasolina</option>
+            <option value="etanol">Etanol</option>
+            <option value="diesel">Diesel</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Nível atual (L)</span>
+          <input type="number" id="cfgCurrentLevel" min="0" step="0.1" />
+        </label>
+        <button class="btn btn-secondary btn-block" id="btnSaveConfig">Salvar configurações</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Backup dos dados</div>
+        <p class="hint">Os dados ficam salvos apenas neste dispositivo/navegador. Exporte um backup de vez em quando.</p>
+        <div class="field-row">
+          <button class="btn btn-secondary btn-block" id="btnExport">Exportar backup</button>
+          <button class="btn btn-secondary btn-block" id="btnImport">Importar backup</button>
+        </div>
+        <input type="file" id="importFile" accept="application/json" hidden />
+        <button class="btn btn-danger btn-block" id="btnReset">Apagar todos os dados</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-goto="painel">
+      <span class="tab-icon">🏠</span><span>Painel</span>
+    </button>
+    <button class="tab-btn" data-goto="trajeto">
+      <span class="tab-icon">🛣️</span><span>Trajeto</span>
+    </button>
+    <button class="tab-btn" data-goto="abastecer">
+      <span class="tab-icon">⛽</span><span>Abastecer</span>
+    </button>
+    <button class="tab-btn" data-goto="historico">
+      <span class="tab-icon">📊</span><span>Histórico</span>
+    </button>
+    <button class="tab-btn" data-goto="config">
+      <span class="tab-icon">⚙️</span><span>Config</span>
+    </button>
+  </nav>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
